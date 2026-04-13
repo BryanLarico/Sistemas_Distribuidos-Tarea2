@@ -1,5 +1,5 @@
 import os
-from flask import Flask, render_template, request, send_from_directory
+from flask import Flask, render_template, request, send_from_directory, jsonify
 from PIL import Image, ImageOps
 
 app = Flask(__name__)
@@ -11,48 +11,48 @@ if not os.path.exists(UPLOAD_FOLDER):
 
 app.config['UPLOAD_FOLDER'] = UPLOAD_FOLDER
 
-@app.route('/', methods=['GET', 'POST'])
+@app.route('/', methods=['GET'])
 def index():
-    original_img = None
-    bordered_img = None
+    # Leer todos los archivos actuales en la carpeta uploads
+    todos_los_archivos = os.listdir(app.config['UPLOAD_FOLDER'])
     
-    if request.method == 'POST':
-        try:
-            # Recibir el archivo desde el formulario HTML
-            file = request.files.get('file')
+    # Separar en dos listas: originales y con borde
+    bordered_files = [f for f in todos_los_archivos if f.startswith('borde_')]
+    original_files = [f for f in todos_los_archivos if not f.startswith('borde_')]
+    
+    return render_template('index.html', original_files=original_files, bordered_files=bordered_files)
+
+@app.route('/upload_files', methods=['POST'])
+def upload_files():
+    # Esta ruta solo recibe los archivos de Dropzone
+    file = request.files.get('file')
+    
+    if file and file.filename != '':
+        filename = file.filename
+        filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
+        
+        # Lógica para evitar duplicados
+        if not os.path.exists(filepath):
+            # Guardar la imagen original
+            file.save(filepath)
+            print(f"Imagen '{filename}' subida y guardada.", flush=True)
+
+            # Procesar la imagen para agregar el borde negro
+            bordered_filename = "borde_" + filename
+            bordered_filepath = os.path.join(app.config['UPLOAD_FOLDER'], bordered_filename)
             
-            if file and file.filename != '':
-                filename = file.filename
-                filepath = os.path.join(app.config['UPLOAD_FOLDER'], filename)
-                
-                # Guardar la imagen original en el servidor
-                file.save(filepath)
-                
-                # Log para la consola de Render
-                print(f"Imagen '{filename}' subida desde la web.", flush=True)
+            with Image.open(filepath) as img:
+                img_con_borde = ImageOps.expand(img, border=20, fill='black')
+                img_con_borde.save(bordered_filepath)
+            
+            print(f"Borde agregado a '{filename}' correctamente.", flush=True)
+        else:
+            print(f"La imagen '{filename}' ya existe. Omitiendo.", flush=True)
 
-                # Procesar la imagen para agregar el borde negro
-                bordered_filename = "borde_" + filename
-                bordered_filepath = os.path.join(app.config['UPLOAD_FOLDER'], bordered_filename)
-                
-                with Image.open(filepath) as img:
-                    # Agrega un borde negro de 20 píxeles
-                    img_con_borde = ImageOps.expand(img, border=20, fill='black')
-                    img_con_borde.save(bordered_filepath)
-                
-                # Log para la consola de Render
-                print(f"Borde agregado a '{filename}' correctamente.", flush=True)
-                
-                original_img = filename
-                bordered_img = bordered_filename
+    # Dropzone espera una respuesta JSON para saber que terminó
+    return jsonify({'success': True})
 
-        except Exception as e:
-            # Log en caso de error
-            print(f"Error procesando la imagen: {e}", flush=True)
-
-    return render_template('index.html', original_img=original_img, bordered_img=bordered_img)
-
-# Ruta para que el navegador pueda mostrar las imágenes de la carpeta 'uploads'
+# Ruta para que el navegador pueda mostrar las imágenes
 @app.route('/uploads/<filename>')
 def upload(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)

@@ -1,44 +1,57 @@
 <!DOCTYPE html>
-<html lang="es">
+<html>
 <head>
-    <meta charset="UTF-8">
-    <title>Procesador de Imágenes</title>
+    <title>File Upload</title>
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/min/dropzone.min.css">
     <style>
-        body { font-family: Arial, sans-serif; margin: 40px; }
-        .container { max-width: 800px; margin: auto; }
-        .images-grid { display: flex; gap: 20px; margin-top: 30px; justify-content: center; }
-        .image-box { text-align: center; border: 1px solid #ddd; padding: 15px; border-radius: 8px; background-color: #f9f9f9;}
-        /* La imagen original la mostramos con borde invisible o gris claro en CSS para contrastar que la otra trae borde real de Python */
-        img { max-width: 300px; height: auto; box-shadow: 2px 2px 10px rgba(0,0,0,0.1); }
+        .gallery {
+            display: flex;
+            flex-wrap: wrap;
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+        .gallery img {
+            max-width: 150px;
+            height: auto;
+            border: 1px solid #ccc;
+        }
     </style>
 </head>
+
 <body>
 
-<div class="container">
-    <h1>Agregar Borde a Imágenes</h1>
-    <p>Selecciona una imagen (.jpg o .bmp) para procesar.</p>
+<h1>File Upload con Dropzone</h1>
 
-    <form action="/" method="POST" enctype="multipart/form-data">
-        <input type="file" name="file" accept=".jpg,.jpeg,.bmp" required>
-        <button type="submit">Subir y Procesar</button>
-    </form>
+<form action="{{ url_for('upload_files') }}" class="dropzone" id="my-dropzone"></form>
 
-    <hr style="margin-top: 30px;">
+<hr>
 
-    {% if original_img and bordered_img %}
-        <h2>Resultados:</h2>
-        <div class="images-grid">
-            <div class="image-box">
-                <h3>Sin bordes (Original)</h3>
-                <img src="{{ url_for('upload', filename=original_img) }}" alt="Original">
-            </div>
-            <div class="image-box">
-                <h3>Con bordes (Procesada)</h3>
-                <img src="{{ url_for('upload', filename=bordered_img) }}" alt="Con Borde">
-            </div>
-        </div>
-    {% endif %}
+<h2>Imágenes subidas:</h2>
+<div class="gallery">
+    {% for file in original_files %}
+        <img src="{{ url_for('upload', filename=file) }}" alt="Original">
+    {% endfor %}
 </div>
+
+<h2>Imágenes con bordes:</h2>
+<div class="gallery">
+    {% for file in bordered_files %}
+        <img src="{{ url_for('upload', filename=file) }}" alt="Con Borde">
+    {% endfor %}
+</div>
+
+<script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/min/dropzone.min.js"></script>
+<script>
+    // Configuración para que la página se actualice al terminar de subir
+    Dropzone.options.myDropzone = {
+        init: function() {
+            this.on("queuecomplete", function() {
+                // Cuando todos los archivos se suban, recargar la página para ver las listas actualizadas
+                location.reload();
+            });
+        }
+    };
+</script>
 
 </body>
 </html>
