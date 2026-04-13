@@ -54,7 +54,7 @@ def index():
 
 # Ruta para que el navegador pueda mostrar las imágenes de la carpeta 'uploads'
 @app.route('/uploads/<filename>')
-def uploaded_file(filename):
+def upload(filename):
     return send_from_directory(app.config['UPLOAD_FOLDER'], filename)
 
 if __name__ == '__main__':
