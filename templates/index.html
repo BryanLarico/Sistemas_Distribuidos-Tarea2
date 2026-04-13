@@ -10,10 +10,16 @@
             gap: 15px;
             margin-bottom: 30px;
         }
+        /* Estilos para mantener proporciones uniformes en ambas galerías */
         .gallery img {
-            max-width: 150px;
-            height: auto;
+            width: 150px;
+            height: 150px;
+            object-fit: cover;
             border: 1px solid #ccc;
+        }
+        /* La imagen con borde no necesita borde CSS adicional */
+        .gallery img.con-borde {
+            border: none;
         }
     </style>
 </head>
@@ -36,18 +42,22 @@
 <h2>Imágenes con bordes:</h2>
 <div class="gallery">
     {% for file in bordered_files %}
-        <img src="{{ url_for('upload', filename=file) }}" alt="Con Borde">
+        <img class="con-borde" src="{{ url_for('upload', filename=file) }}" alt="Con Borde">
     {% endfor %}
 </div>
 
 <script src="https://cdnjs.cloudflare.com/ajax/libs/dropzone/5.7.1/min/dropzone.min.js"></script>
 <script>
-    // Configuración para que la página se actualice al terminar de subir
     Dropzone.options.myDropzone = {
+        maxFilesize: 1, // Restringe a 1MB en el lado del cliente también
+        acceptedFiles: ".jpeg,.jpg,.png,.bmp",
         init: function() {
             this.on("queuecomplete", function() {
-                // Cuando todos los archivos se suban, recargar la página para ver las listas actualizadas
-                location.reload();
+                // Cuando termina de procesar los archivos, espera 2.5 segundos
+                // para que el usuario pueda ver las "X" de error antes de recargar.
+                setTimeout(function() {
+                    location.reload();
+                }, 2500);
             });
         }
     };
